@@ -14,9 +14,10 @@ import Main from "@/components/Main/Main";
 import SongPage from "@/components/Song/SongPage";
 import MostCommented from "@/components/MostCommented/MostCommented";
 import BestRated from "@/components/BestRated/BestRated";
+import AdminPanel from "@/components/Admin/AdminPanel";
 
 const SidebarContent: React.FC = () => {
-  const { isAuthenticated, logout, isLoading } = useAuth();
+  const { isAuthenticated, isAdmin, logout, isLoading } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const navigate = useNavigate();
@@ -32,6 +33,14 @@ const SidebarContent: React.FC = () => {
       <Button variant="tertiary" fullWidth onClick={() => navigate('/best-rated')}>
         Najlepiej oceniane
       </Button>
+      {isAdmin && (
+        <>
+          <hr style={{ border: 'none', borderTop: '1px solid #3c3c3c', margin: '4px 0' }} />
+          <Button variant="tertiary" fullWidth onClick={() => navigate('/admin')}>
+            Redakcja ocen i komentarzy
+          </Button>
+        </>
+      )}
       <hr style={{ border: 'none', borderTop: '1px solid #3c3c3c', margin: '4px 0' }} />
       {isLoading ? null : isAuthenticated ? (
         <Button variant="tertiary" fullWidth onClick={logout}>
@@ -82,6 +91,7 @@ const App: React.FC = () => {
                 <Route path="/song/:id" element={<SongPage />} />
                 <Route path="/most-commented" element={<MostCommented />} />
                 <Route path="/best-rated" element={<BestRated />} />
+                <Route path="/admin" element={<AdminPanel />} />
               </Routes>
             </SidebarLayout>
           </SnackbarProvider>
