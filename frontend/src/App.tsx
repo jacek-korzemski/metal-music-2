@@ -15,6 +15,8 @@ import SongPage from "@/components/Song/SongPage";
 import MostCommented from "@/components/MostCommented/MostCommented";
 import BestRated from "@/components/BestRated/BestRated";
 import AdminPanel from "@/components/Admin/AdminPanel";
+import Channels from "@/components/Channels/Channels";
+import ChannelPage from "@/components/Channels/ChannelPage";
 
 const SidebarContent: React.FC = () => {
   const { isAuthenticated, isAdmin, logout, isLoading } = useAuth();
@@ -32,6 +34,9 @@ const SidebarContent: React.FC = () => {
       </Button>
       <Button variant="tertiary" fullWidth onClick={() => navigate('/best-rated')}>
         Najlepiej oceniane
+      </Button>
+      <Button variant="tertiary" fullWidth onClick={() => navigate('/channels')}>
+        Wszystkie kanały
       </Button>
       {isAdmin && (
         <>
@@ -91,6 +96,8 @@ const App: React.FC = () => {
                 <Route path="/song/:id" element={<SongPage />} />
                 <Route path="/most-commented" element={<MostCommented />} />
                 <Route path="/best-rated" element={<BestRated />} />
+                <Route path="/channels" element={<Channels />} />
+                <Route path="/channel/:id" element={<ChannelPage />} />
                 <Route path="/admin" element={<AdminPanel />} />
               </Routes>
             </SidebarLayout>
