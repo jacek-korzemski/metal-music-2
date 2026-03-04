@@ -1,4 +1,6 @@
-const API_BASE = '/api/auth';
+import { USER_API_URL } from '../config';
+
+const API_BASE = `${USER_API_URL}/api/auth`;
 const TOKEN_KEY = 'jwt_token';
 
 export interface User {

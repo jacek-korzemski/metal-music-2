@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ContextMenuProps, MenuItem, MenuItemSubmenu } from './types';
 import ChevronRightIcon from '../Icon/ChevronRightIcon';
 import { TriggerWrapper, MenuContainer, MenuDivider, MenuItemStyled, MenuItemIcon, MenuItemLabel, MenuItemShortcut, SubmenuIndicator } from './styles';
-import Submenu from './SubMenu';
+import Submenu from '@/components/ContextMenu/Submenu';
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   trigger,

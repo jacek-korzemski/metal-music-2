@@ -7,7 +7,7 @@ export function useGetDataWithPolling<T = unknown>({
   pollingInterval = 0,
 }: UseGetDataWithPollingOptions): UseGetDataResult<T> & { stopPolling: () => void; startPolling: () => void } {
   const result = useGetData<T>({ apiUrl, enabled });
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isPolling, setIsPolling] = useState(pollingInterval > 0);
 
   const stopPolling = useCallback(() => {

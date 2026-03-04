@@ -43,7 +43,7 @@ export const PageNumber = styled.button<{ $active?: boolean }>`
       $active ? theme.colors.borderFocus : "transparent"};
   border-radius: ${({ theme }) => theme.borderRadius.sm};
   color: ${({ theme, $active }) =>
-    $active ? theme.colors.textOnPrimary ?? "#fff" : theme.colors.textSecondary};
+    $active ? theme.colors.infoLight ?? "#fff" : theme.colors.textSecondary};
   font-size: ${({ theme }) => theme.fontSize.sm};
   font-weight: ${({ theme, $active }) =>
     $active ? theme.fontWeight.semibold : theme.fontWeight.normal};

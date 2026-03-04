@@ -21,7 +21,7 @@ const getIcon = (type: SnackbarType) => {
 
 const SnackbarItemComponent: React.FC<SnackbarItemComponentProps> = ({ item, onClose }) => {
   const [isExiting, setIsExiting] = React.useState(false);
-  const timeoutRef = React.useRef<NodeJS.Timeout>(null);
+  const timeoutRef = React.useRef<ReturnType<typeof setTimeout>>(null);
 
   const handleClose = React.useCallback(() => {
     setIsExiting(true);
