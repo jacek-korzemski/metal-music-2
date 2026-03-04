@@ -5,6 +5,7 @@ import { MainContent } from '@/components/Sidebar/styles';
 import { Spinner } from '@/components/Spinner/Spinner';
 import { StatusMessage } from '@/components/Main/styles';
 import type { Video } from '@/components/Main/types';
+import { API_URL } from '@/config';
 import Modal from '@/components/Modal/Modal';
 import ConfirmDialog from '@/components/Modal/ConfirmDialog';
 import {
@@ -85,7 +86,7 @@ const AdminPanel = () => {
     await Promise.allSettled(
       unique.map(async (id) => {
         try {
-          const res = await fetch(`http://localhost:8080/getVideoById/${id}`);
+          const res = await fetch(`${API_URL}/getVideoById/${id}`);
           if (!res.ok) return;
           const data: Video[] = await res.json();
           if (data[0]) {

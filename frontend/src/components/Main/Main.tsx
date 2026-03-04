@@ -1,6 +1,7 @@
 import { MainContent } from "@/components/Sidebar/styles";
 import { Spinner } from "@/components/Spinner/Spinner";
 import useGetData from "@/hooks/useGetData";
+import { API_URL } from "@/config";
 import { Video } from "./types";
 import {
   VideoGrid,
@@ -31,7 +32,7 @@ const formatDate = (dateString: string) => {
 
 const Main = () => {
   const { data, isFetching, isError } = useGetData<Video[]>({
-    apiUrl: "http://localhost:8080/getNewVideos",
+    apiUrl: `${API_URL}/getNewVideos`,
   });
 
   const visibleVideos = data?.filter((v) => !v.hide && !v.deleted) ?? [];

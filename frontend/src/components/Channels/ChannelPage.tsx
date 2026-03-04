@@ -1,24 +1,28 @@
-import { useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { MainContent } from "@/components/Sidebar/styles";
+import { FullHeightColumn } from "./styles";
 import { Spinner } from "@/components/Spinner/Spinner";
-import useGetData from "@/hooks/useGetData";
+import { API_URL } from "@/config";
 import ChevronLeftIcon from "@/components/Icon/ChevronLeftIcon";
+import SongDetail from "@/components/Song/SongDetail";
 import { ChannelVideo } from "./types";
 import {
   ChannelPageHeader,
   BackButton,
   PageTitle,
   VideoCount,
-  VirtualListContainer,
-  VirtualVideoRow,
+  VideoListContainer,
+  VideoRowButton,
   VideoRowThumbnail,
   VideoRowInfo,
   VideoRowTitle,
   VideoRowDate,
+  ChannelContentArea,
+  ExpandedSongSection,
 } from "./styles";
+import Pagination from "@/components/Pagination/Pagination";
 import { StatusMessage } from "@/components/Main/styles";
+import { useGetDataCached } from "@/hooks/useGetDataCached";
 
 const decodeHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -36,49 +40,68 @@ const formatDate = (dateString: string) => {
   });
 };
 
-const ROW_HEIGHT = 84;
-const ROW_GAP = 8;
+const ITEMS_PER_PAGE = 50;
 
 const ChannelPage = () => {
   const { id } = useParams<{ id: string }>();
-  const parentRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data, isFetching, isError } = useGetData<ChannelVideo[]>({
-    apiUrl: `http://localhost:8080/getChannelById/${id}`,
+  const { data, isFetching, isError } = useGetDataCached<ChannelVideo[]>({
+    apiUrl: `${API_URL}/getChannelById/${id}`,
     enabled: !!id,
   });
 
-  const videos = data?.filter((v) => !v.hide && !v.deleted) ?? [];
+  const videos = useMemo(
+    () => data?.filter((v) => !v.hide && !v.deleted) ?? [],
+    [data],
+  );
 
-  const virtualizer = useVirtualizer({
-    count: videos.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => ROW_HEIGHT + ROW_GAP,
-    overscan: 10,
-  });
+  const totalPages = Math.ceil(videos.length / ITEMS_PER_PAGE);
+  const paginatedVideos = useMemo(
+    () =>
+      videos.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE,
+      ),
+    [videos, currentPage],
+  );
+
+  const changePage = useCallback(
+    (page: number) => {
+      setCurrentPage(page);
+      listRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    },
+    [],
+  );
+
+  const handleVideoClick = (videoId: number) => {
+    setSelectedSongId((prev) => (prev === videoId ? null : videoId));
+  };
 
   if (isFetching) {
     return (
-      <MainContent>
+      <FullHeightColumn>
         <StatusMessage>
           <Spinner />
         </StatusMessage>
-      </MainContent>
+      </FullHeightColumn>
     );
   }
 
   if (isError) {
     return (
-      <MainContent>
+      <FullHeightColumn>
         <StatusMessage>Błąd podczas ładowania danych kanału.</StatusMessage>
-      </MainContent>
+      </FullHeightColumn>
     );
   }
 
   const channelTitle = videos.length > 0 ? videos[0].channel_title : "Kanał";
 
   return (
-    <MainContent style={{ display: "flex", flexDirection: "column" }}>
+    <FullHeightColumn>
       <ChannelPageHeader>
         <BackButton to="/channels">
           <ChevronLeftIcon />
@@ -87,50 +110,49 @@ const ChannelPage = () => {
       </ChannelPageHeader>
       <VideoCount>{videos.length} filmów</VideoCount>
 
-      <VirtualListContainer ref={parentRef}>
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualRow) => {
-            const video = videos[virtualRow.index];
-            return (
-              <div
-                key={virtualRow.key}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${virtualRow.size - ROW_GAP}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <VirtualVideoRow
-                  to={`/song/${video.id}`}
-                  style={{ height: "100%" }}
-                >
-                  <VideoRowThumbnail
-                    src={video.medium_thumbnail}
-                    alt={video.title}
-                    loading="lazy"
-                  />
-                  <VideoRowInfo>
-                    <VideoRowTitle>{decodeHtml(video.title)}</VideoRowTitle>
-                    <VideoRowDate>
-                      {formatDate(video.published_at)}
-                    </VideoRowDate>
-                  </VideoRowInfo>
-                </VirtualVideoRow>
-              </div>
-            );
-          })}
-        </div>
-      </VirtualListContainer>
-    </MainContent>
+      <ChannelContentArea>
+        <VideoListContainer ref={listRef}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={changePage}
+          />
+
+          {paginatedVideos.map((video) => (
+            <VideoRowButton
+              key={video.id}
+              $selected={video.id === selectedSongId}
+              onClick={() => handleVideoClick(video.id)}
+            >
+              <VideoRowThumbnail
+                src={video.medium_thumbnail}
+                alt={video.title}
+                loading="lazy"
+              />
+              <VideoRowInfo>
+                <VideoRowTitle>{decodeHtml(video.title)}</VideoRowTitle>
+                <VideoRowDate>{formatDate(video.published_at)}</VideoRowDate>
+              </VideoRowInfo>
+            </VideoRowButton>
+          ))}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={changePage}
+          />
+        </VideoListContainer>
+
+        {selectedSongId !== null && (
+          <ExpandedSongSection key={selectedSongId}>
+            <SongDetail
+              songId={selectedSongId}
+              onClose={() => setSelectedSongId(null)}
+            />
+          </ExpandedSongSection>
+        )}
+      </ChannelContentArea>
+    </FullHeightColumn>
   );
 };
 

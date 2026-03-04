@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 
 export const SongContainer = styled.div`
@@ -47,6 +48,7 @@ export const PlayerWrapper = styled.div`
   aspect-ratio: 16 / 9;
   border-radius: ${({ theme }) => theme.borderRadius.lg};
   overflow: hidden;
+  min-height: 320px;
 
   iframe {
     width: 100%;
@@ -183,4 +185,57 @@ export const CommentContent = styled.p`
   color: ${({ theme }) => theme.colors.text};
   line-height: 1.5;
   white-space: pre-wrap;
+`;
+
+/* Inline song detail (embedded mode) */
+
+export const SongDetailToolbar = styled.div`
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
+  background-color: ${({ theme }) => theme.colors.background};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+export const SongDetailScrollArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.lg};
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+`;
+
+export const CloseDetailButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  background: none;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.sm};
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: ${({ theme }) => theme.fontSize.lg};
+  cursor: pointer;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  transition: all ${({ theme }) => theme.transitions.fast};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text};
+    border-color: ${({ theme }) => theme.colors.borderLight};
+    background-color: ${({ theme }) => theme.colors.surfaceHover};
+  }
+`;
+
+export const SongPageLink = styled(Link)`
+  font-size: ${({ theme }) => theme.fontSize.lg};
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  transition: color ${({ theme }) => theme.transitions.fast};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.primaryHover};
+  }
 `;

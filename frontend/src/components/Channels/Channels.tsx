@@ -1,6 +1,7 @@
 import { MainContent } from "@/components/Sidebar/styles";
 import { Spinner } from "@/components/Spinner/Spinner";
 import useGetData from "@/hooks/useGetData";
+import { API_URL } from "@/config";
 import { Channel } from "./types";
 import {
   ChannelList,
@@ -13,7 +14,7 @@ import { StatusMessage } from "@/components/Main/styles";
 
 const Channels = () => {
   const { data, isFetching, isError } = useGetData<Channel[]>({
-    apiUrl: "http://localhost:8080/getAllChannels",
+    apiUrl: `${API_URL}/getAllChannels`,
   });
 
   if (isFetching) {

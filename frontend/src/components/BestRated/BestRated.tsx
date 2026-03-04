@@ -3,6 +3,7 @@ import { MainContent } from "@/components/Sidebar/styles";
 import { Spinner } from "@/components/Spinner/Spinner";
 import { StatusMessage } from "@/components/Main/styles";
 import { getBestRated, type RatedSongData } from "@/services/songService";
+import { API_URL } from "@/config";
 import { Video } from "@/components/Main/types";
 import StarRating from "@/components/Song/StarRating";
 import {
@@ -45,7 +46,7 @@ const BestRated = () => {
         const songDetails = await Promise.all(
           rated.map(async (item: RatedSongData) => {
             const res = await fetch(
-              `http://localhost:8080/getVideoById/${item.song_id}`
+              `${API_URL}/getVideoById/${item.song_id}`
             );
             const videos: Video[] = await res.json();
             return videos[0]

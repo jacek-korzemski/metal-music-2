@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 
+export const FullHeightColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+`;
+
 export const ChannelList = styled.div`
   display: flex;
   flex-direction: column;
@@ -77,29 +84,14 @@ export const BackButton = styled(Link)`
   }
 `;
 
-export const VirtualListContainer = styled.div`
+export const VideoListContainer = styled.div`
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: ${({ theme }) => theme.spacing.md};
-`;
-
-export const VirtualVideoRow = styled(Link)`
   display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background-color: ${({ theme }) => theme.colors.surface};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  text-decoration: none;
-  color: inherit;
-  transition: all ${({ theme }) => theme.transitions.normal};
-
-  &:hover {
-    border-color: ${({ theme }) => theme.colors.borderLight};
-    background-color: ${({ theme }) => theme.colors.surfaceHover};
-    box-shadow: ${({ theme }) => theme.shadows.sm};
-  }
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const VideoRowThumbnail = styled.img`
@@ -137,4 +129,46 @@ export const VideoCount = styled.span`
   color: ${({ theme }) => theme.colors.textSecondary};
   padding: ${({ theme }) => theme.spacing.md};
   padding-top: ${({ theme }) => theme.spacing.xs};
+`;
+
+export const VideoRowButton = styled.div<{ $selected?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background-color: ${({ theme, $selected }) =>
+    $selected ? theme.colors.surfaceActive : theme.colors.surface};
+  border: 1px solid
+    ${({ theme, $selected }) =>
+      $selected ? theme.colors.borderFocus : theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  color: inherit;
+  cursor: pointer;
+  transition: all ${({ theme }) => theme.transitions.normal};
+
+  &:hover {
+    border-color: ${({ theme, $selected }) =>
+      $selected ? theme.colors.borderFocus : theme.colors.borderLight};
+    background-color: ${({ theme, $selected }) =>
+      $selected ? theme.colors.surfaceActive : theme.colors.surfaceHover};
+    box-shadow: ${({ theme }) => theme.shadows.sm};
+  }
+`;
+
+
+export const ChannelContentArea = styled.div`
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+`;
+
+export const ExpandedSongSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid ${({ theme }) => theme.colors.borderFocus};
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 `;
