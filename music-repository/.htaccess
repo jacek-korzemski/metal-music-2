@@ -1,0 +1,5 @@
+RewriteEngine on
+RewriteRule ^$ public/ [L]
+RewriteRule (.*) public/$1 [L]
+#Wersja PHP zmieniona: 2021-09-09 01:13:47
+AddHandler application/x-httpd-php80 php 
