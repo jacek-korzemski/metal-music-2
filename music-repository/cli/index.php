@@ -4,7 +4,7 @@ require_once __DIR__ . '/engine/engine.php';
 require_once __DIR__ . '/services/services.php';
 require_once "functions.php";
 
-$options  = getopt("a:", ["id:", "from:", "to:", "all", "url:"]);
+$options  = getopt("a:", ["id:", "from:", "to:", "all", "url:", "channel_id:", "check-urls"]);
 
 if (isset($options['a']))
 {
@@ -51,6 +51,11 @@ if (isset($options['a']))
       $url  =   isset($options['url'])               ?   $options['url']    : false;
       cli_test_url($url);
       break;
+    case 'build_channel_sql':
+      $channel_id   =   isset($options['channel_id'])          ?   $options['channel_id']    : false;
+      $check_urls   =   array_key_exists("check-urls", $options);
+      cli_build_channel_sql($channel_id, $check_urls);
+      break;
     default:
       echo 'Invalid action. To see the action list, simply run php index.php without arguments.';
       break;
@@ -64,7 +69,8 @@ else
     Here are some usefull commands:
 
       BUILD:
-      -a build_channel --id <channel_id> : use to get all videos from selected channel
+      -a build_channel --id <channel_id>                        : use to get all videos from selected channel
+      -a build_channel_sql --channel_id <yt_id> [--check-urls]  : generate .SQL file for import via phpMyAdmin
 
       UPDATE:
       -a update --id <channel_id>        : use to update single channel via Youtube api (with your key from .env file)

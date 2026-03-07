@@ -1,4 +1,6 @@
-const API_BASE = '/api/admin';
+import { USER_API_URL } from '../config';
+
+const API_BASE = `${USER_API_URL}/api/admin`;
 const TOKEN_KEY = 'jwt_token';
 
 export interface AdminComment {
