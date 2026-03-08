@@ -117,7 +117,7 @@ export const theme = {
   
   zIndex: {
     base: 1,
-    dropdown: 100,
+    dropdown: 350,
     sticky: 200,
     modal: 300,
     popover: 400,

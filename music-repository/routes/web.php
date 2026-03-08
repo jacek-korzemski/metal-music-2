@@ -44,6 +44,31 @@ Route::get('/search/{s}', function($s) {
     return Music::where('title', 'like', '%'.$s.'%')->get();
 });
 
+Route::get('/searchVideos', function(Request $request) {
+    $query = Music::where('hide', null);
+
+    if ($request->filled('title')) {
+        $query->where('title', 'like', '%' . $request->input('title') . '%');
+    }
+    if ($request->filled('published_after')) {
+        $query->where('published_at', '>=', $request->input('published_after'));
+    }
+    if ($request->filled('published_before')) {
+        $query->where('published_at', '<=', $request->input('published_before'));
+    }
+    if ($request->filled('channel')) {
+        $channel = Channels::find($request->input('channel'));
+        if ($channel) {
+            $query->where('channel_id', $channel->channel_id);
+        }
+    }
+    if ($request->filled('channel_title')) {
+        $query->where('channel_title', 'like', '%' . $request->input('channel_title') . '%');
+    }
+
+    return $query->orderBy('published_at', 'desc')->get();
+});
+
 Route::get('/getRandomFromChannel/{id}', function($id) {
     return Music::where('channel_id', $id)->inRandomOrder()->limit(10)->get();
 });

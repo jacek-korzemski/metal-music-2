@@ -17,11 +17,14 @@ import BestRated from "@/components/BestRated/BestRated";
 import AdminPanel from "@/components/Admin/AdminPanel";
 import Channels from "@/components/Channels/Channels";
 import ChannelPage from "@/components/Channels/ChannelPage";
+import SearchModal from "@/components/Search/SearchModal";
+import SearchResults from "@/components/Search/SearchResults";
 
 const SidebarContent: React.FC = () => {
   const { isAuthenticated, isAdmin, logout, isLoading } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -38,6 +41,10 @@ const SidebarContent: React.FC = () => {
       <Button variant="tertiary" fullWidth onClick={() => navigate('/channels')}>
         Wszystkie kanały
       </Button>
+      <Button variant="tertiary" fullWidth onClick={() => setSearchModalOpen(true)}>
+        Szukaj
+      </Button>
+      <SearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
       {isAdmin && (
         <>
           <hr style={{ border: 'none', borderTop: '1px solid #3c3c3c', margin: '4px 0' }} />
@@ -98,6 +105,7 @@ const App: React.FC = () => {
                 <Route path="/best-rated" element={<BestRated />} />
                 <Route path="/channels" element={<Channels />} />
                 <Route path="/channel/:id" element={<ChannelPage />} />
+                <Route path="/search" element={<SearchResults />} />
                 <Route path="/admin" element={<AdminPanel />} />
               </Routes>
             </SidebarLayout>

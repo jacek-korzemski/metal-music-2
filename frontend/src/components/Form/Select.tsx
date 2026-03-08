@@ -20,6 +20,7 @@ export const Select: React.FC<SelectProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0, width: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const selectedOption = options.find(opt => opt.value === value);
@@ -57,17 +58,20 @@ export const Select: React.FC<SelectProps> = ({
     setSearchTerm('');
   };
 
-  // Close on outside click
+  // Close on outside click (ignore clicks on trigger or dropdown, since dropdown is portaled)
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleClickOutside = (e: MouseEvent) => {
-      if (!triggerRef.current?.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const insideTrigger = triggerRef.current?.contains(target);
+      const insideDropdown = dropdownRef.current?.contains(target);
+      if (!insideTrigger && !insideDropdown) {
         setIsOpen(false);
         setSearchTerm('');
       }
     };
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
@@ -99,8 +103,9 @@ export const Select: React.FC<SelectProps> = ({
       </SelectTrigger>
       
       {isOpen && createPortal(
-        <Dropdown 
-          $x={dropdownPosition.x} 
+        <Dropdown
+          ref={dropdownRef}
+          $x={dropdownPosition.x}
           $y={dropdownPosition.y}
           $width={dropdownPosition.width}
         >
