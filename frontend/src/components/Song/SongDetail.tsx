@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { Spinner } from "@/components/Spinner/Spinner";
 import useGetData from "@/hooks/useGetData";
 import { API_URL } from "@/config";
@@ -9,9 +10,12 @@ import {
   getRatings,
   type CommentData,
   type RatingData,
+  type ReviewDetail,
 } from "@/services/songService";
 import RatingSection from "./RatingSection";
 import CommentSection from "./CommentSection";
+import ReviewSection from "./ReviewSection";
+import { TabContainer, Tab } from "@/components/Admin/styles";
 import {
   SongTitle,
   SongMeta,
@@ -41,9 +45,23 @@ const formatDate = (dateString: string) => {
 interface SongDetailProps {
   songId: number;
   onClose?: () => void;
+  /** Scrollable wrapper without top toolbar (e.g. reviews layout) */
+  embedded?: boolean;
+  /** Po zapisie recenzji (admin → zakładka Recenzja) */
+  onReviewSaved?: (detail: ReviewDetail) => void;
 }
 
-const SongDetail: React.FC<SongDetailProps> = ({ songId, onClose }) => {
+const SongDetail: React.FC<SongDetailProps> = ({
+  songId,
+  onClose,
+  embedded,
+  onReviewSaved,
+}) => {
+  const { isAdmin } = useAuth();
+  const [adminInteractionTab, setAdminInteractionTab] = useState<
+    "comments" | "review"
+  >("comments");
+
   const { data, isFetching, isError } = useGetData<Video[]>({
     apiUrl: `${API_URL}/getVideoById/${songId}`,
   });
@@ -82,6 +100,10 @@ const SongDetail: React.FC<SongDetailProps> = ({ songId, onClose }) => {
     }
   }, [songId, fetchComments, fetchRatings]);
 
+  useEffect(() => {
+    setAdminInteractionTab("comments");
+  }, [songId]);
+
   if (isFetching) {
     return (
       <StatusMessage>
@@ -115,11 +137,41 @@ const SongDetail: React.FC<SongDetailProps> = ({ songId, onClose }) => {
         ratingData={ratingData}
         onRatingUpdated={fetchRatings}
       />
-      <CommentSection
-        songId={songId}
-        comments={comments}
-        onCommentAdded={fetchComments}
-      />
+      {isAdmin ? (
+        <>
+          <TabContainer>
+            <Tab
+              type="button"
+              $active={adminInteractionTab === "comments"}
+              onClick={() => setAdminInteractionTab("comments")}
+            >
+              Komentarz
+            </Tab>
+            <Tab
+              type="button"
+              $active={adminInteractionTab === "review"}
+              onClick={() => setAdminInteractionTab("review")}
+            >
+              Recenzja
+            </Tab>
+          </TabContainer>
+          {adminInteractionTab === "comments" ? (
+            <CommentSection
+              songId={songId}
+              comments={comments}
+              onCommentAdded={fetchComments}
+            />
+          ) : (
+            <ReviewSection songId={songId} onReviewSaved={onReviewSaved} />
+          )}
+        </>
+      ) : (
+        <CommentSection
+          songId={songId}
+          comments={comments}
+          onCommentAdded={fetchComments}
+        />
+      )}
     </>
   );
 
@@ -135,6 +187,10 @@ const SongDetail: React.FC<SongDetailProps> = ({ songId, onClose }) => {
         <SongDetailScrollArea>{content}</SongDetailScrollArea>
       </>
     );
+  }
+
+  if (embedded) {
+    return <SongDetailScrollArea>{content}</SongDetailScrollArea>;
   }
 
   return content;

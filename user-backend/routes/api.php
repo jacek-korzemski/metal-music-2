@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SongInteractionController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,9 @@ Route::prefix('auth')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
     });
 });
+
+Route::get('/reviews', [ReviewController::class, 'index']);
+Route::get('/songs/{songId}/review', [ReviewController::class, 'showBySong']);
 
 Route::get('/songs/{songId}/comments', [SongInteractionController::class, 'getComments']);
 Route::get('/songs/{songId}/ratings', [SongInteractionController::class, 'getRatings']);
@@ -30,4 +34,6 @@ Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
     Route::delete('/comments/{id}', [AdminController::class, 'deleteComment']);
     Route::get('/ratings', [AdminController::class, 'getAllRatings']);
     Route::delete('/ratings/{id}', [AdminController::class, 'deleteRating']);
+    Route::put('/songs/{songId}/review', [ReviewController::class, 'upsert']);
+    Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
 });

@@ -17,6 +17,7 @@ import BestRated from "@/components/BestRated/BestRated";
 import AdminPanel from "@/components/Admin/AdminPanel";
 import Channels from "@/components/Channels/Channels";
 import ChannelPage from "@/components/Channels/ChannelPage";
+import ReviewsPage from "@/components/Reviews/ReviewsPage";
 import SearchModal from "@/components/Search/SearchModal";
 import SearchResults from "@/components/Search/SearchResults";
 
@@ -31,6 +32,9 @@ const SidebarContent: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <Button variant="tertiary" fullWidth onClick={() => navigate('/')}>
         Strona główna
+      </Button>
+      <Button variant="tertiary" fullWidth onClick={() => navigate('/reviews')}>
+        Recenzje
       </Button>
       <Button variant="tertiary" fullWidth onClick={() => navigate('/most-commented')}>
         Najczęściej komentowane
@@ -100,6 +104,7 @@ const App: React.FC = () => {
             >
               <Routes>
                 <Route path="/" element={<Main />} />
+                <Route path="/reviews" element={<ReviewsPage />} />
                 <Route path="/song/:id" element={<SongPage />} />
                 <Route path="/most-commented" element={<MostCommented />} />
                 <Route path="/best-rated" element={<BestRated />} />

@@ -33,6 +33,27 @@ export interface RatedSongData {
   rating_count: number;
 }
 
+export interface ReviewAuthor {
+  name: string;
+}
+
+export interface ReviewListItem {
+  id: number;
+  song_id: number;
+  updated_at: string;
+  created_at: string;
+  author: ReviewAuthor;
+}
+
+export interface ReviewDetail {
+  id: number;
+  song_id: number;
+  content_html: string;
+  created_at: string;
+  updated_at: string;
+  author: ReviewAuthor;
+}
+
 function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -65,6 +86,74 @@ async function request<T>(
   }
 
   return response.json();
+}
+
+async function fetchWithAuth(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+}
+
+export async function listReviews(): Promise<ReviewListItem[]> {
+  return request<ReviewListItem[]>('/reviews');
+}
+
+export async function getReviewBySong(
+  songId: number
+): Promise<ReviewDetail | null> {
+  const response = await fetch(`${API_BASE}/songs/${songId}/review`, {
+    headers: { Accept: 'application/json' },
+  });
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: `Request failed with status ${response.status}`,
+    }));
+    throw errorData;
+  }
+  return response.json() as Promise<ReviewDetail>;
+}
+
+export async function upsertReview(
+  songId: number,
+  contentHtml: string
+): Promise<ReviewDetail> {
+  const response = await fetchWithAuth(`/admin/songs/${songId}/review`, {
+    method: 'PUT',
+    body: JSON.stringify({ content_html: contentHtml }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: `Request failed with status ${response.status}`,
+    }));
+    throw errorData;
+  }
+  return response.json() as Promise<ReviewDetail>;
+}
+
+export async function deleteReview(reviewId: number): Promise<{ message: string }> {
+  const response = await fetchWithAuth(`/admin/reviews/${reviewId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: `Request failed with status ${response.status}`,
+    }));
+    throw errorData;
+  }
+  return response.json() as Promise<{ message: string }>;
 }
 
 export async function getComments(songId: number): Promise<CommentData[]> {
