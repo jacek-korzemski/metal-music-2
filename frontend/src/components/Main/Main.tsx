@@ -1,18 +1,26 @@
-import { MainContent } from "@/components/Sidebar/styles";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/Spinner/Spinner";
 import useGetData from "@/hooks/useGetData";
 import { API_URL } from "@/config";
 import { Video } from "./types";
 import {
-  VideoGrid,
-  VideoCard,
-  Thumbnail,
-  VideoInfo,
-  VideoTitle,
-  ChannelName,
-  PublishedDate,
   StatusMessage,
 } from "./styles";
+import {
+  FullHeightColumn,
+  ChannelContentArea,
+  PageTitle,
+  VideoCount,
+  VideoListContainer,
+  VideoRowButton,
+  VideoRowThumbnail,
+  VideoRowInfo,
+  VideoRowTitle,
+  VideoRowDate,
+  ExpandedSongSection,
+} from "@/components/Channels/styles";
+import Pagination from "@/components/Pagination/Pagination";
+import SongDetail from "@/components/Song/SongDetail";
 
 const decodeHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -30,53 +38,109 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const ITEMS_PER_PAGE = 50;
+
 const Main = () => {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const { data, isFetching, isError } = useGetData<Video[]>({
     apiUrl: `${API_URL}/getNewVideos`,
   });
 
-  const visibleVideos = data?.filter((v) => !v.hide && !v.deleted) ?? [];
+  const visibleVideos = useMemo(
+    () => data?.filter((v) => !v.hide && !v.deleted) ?? [],
+    [data],
+  );
+  const totalPages = Math.ceil(visibleVideos.length / ITEMS_PER_PAGE);
+  const paginatedVideos = useMemo(
+    () =>
+      visibleVideos.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE,
+      ),
+    [visibleVideos, currentPage],
+  );
+
+  const changePage = useCallback(
+    (page: number) => {
+      setCurrentPage(page);
+      listRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    },
+    [],
+  );
+
+  const handleVideoClick = (videoId: number) => {
+    setSelectedSongId((prev) => (prev === videoId ? null : videoId));
+  };
 
   if (isFetching) {
     return (
-      <MainContent>
+      <FullHeightColumn>
         <StatusMessage>
           <Spinner />
         </StatusMessage>
-      </MainContent>
+      </FullHeightColumn>
     );
   }
 
   if (isError) {
     return (
-      <MainContent>
+      <FullHeightColumn>
         <StatusMessage>Błąd podczas ładowania danych.</StatusMessage>
-      </MainContent>
+      </FullHeightColumn>
     );
   }
 
   return (
-    <MainContent>
-      <VideoGrid>
-        {visibleVideos.map((video) => (
-          <VideoCard
+    <FullHeightColumn>
+      <PageTitle>Najnowsze filmy</PageTitle>
+      <VideoCount>{visibleVideos.length} filmów</VideoCount>
+
+      <ChannelContentArea>
+        <VideoListContainer ref={listRef}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={changePage}
+          />
+
+          {paginatedVideos.map((video) => (
+            <VideoRowButton
             key={video.id}
-            to={`/song/${video.id}`}
-          >
-            <Thumbnail
-              src={video.medium_thumbnail}
-              alt={video.title}
-              loading="lazy"
+              $selected={video.id === selectedSongId}
+              onClick={() => handleVideoClick(video.id)}
+            >
+              <VideoRowThumbnail
+                src={video.medium_thumbnail}
+                alt={video.title}
+                loading="lazy"
+              />
+              <VideoRowInfo>
+                <VideoRowTitle>{decodeHtml(video.title)}</VideoRowTitle>
+                <VideoRowDate>{formatDate(video.published_at)}</VideoRowDate>
+              </VideoRowInfo>
+            </VideoRowButton>
+          ))}
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={changePage}
+          />
+        </VideoListContainer>
+
+        {selectedSongId !== null && (
+          <ExpandedSongSection key={selectedSongId}>
+            <SongDetail
+              songId={selectedSongId}
+              onClose={() => setSelectedSongId(null)}
             />
-            <VideoInfo>
-              <VideoTitle>{decodeHtml(video.title)}</VideoTitle>
-              <ChannelName>{decodeHtml(video.channel_title)}</ChannelName>
-              <PublishedDate>{formatDate(video.published_at)}</PublishedDate>
-            </VideoInfo>
-          </VideoCard>
-        ))}
-      </VideoGrid>
-    </MainContent>
+          </ExpandedSongSection>
+        )}
+      </ChannelContentArea>
+    </FullHeightColumn>
   );
 };
 
