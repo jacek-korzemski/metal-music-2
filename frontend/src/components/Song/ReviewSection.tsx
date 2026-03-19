@@ -8,6 +8,7 @@ import {
   upsertReview,
   type ReviewDetail,
 } from '@/services/songService';
+import { finalizeReviewHtml } from '@/utils/reviewHtml';
 import { SectionContainer, SectionTitle } from './styles';
 import styled from 'styled-components';
 
@@ -25,12 +26,15 @@ const EditorWrap = styled.div`
 
 interface ReviewSectionProps {
   songId: number;
+  /** Zapis do user-backend (lista /reviews bez skoku tytułu). */
+  songTitle?: string | null;
   /** Wywoływane po udanym zapisie (np. odświeżenie podglądu recenzji obok edytora) */
   onReviewSaved?: (detail: ReviewDetail) => void;
 }
 
 const ReviewSection: React.FC<ReviewSectionProps> = ({
   songId,
+  songTitle,
   onReviewSaved,
 }) => {
   const editorRef = useRef<SimpleWYSIWYGRef>(null);
@@ -66,11 +70,14 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
   }, [load]);
 
   const handleSave = async () => {
-    const html = editorRef.current?.getHtml() ?? '';
+    const raw = editorRef.current?.getRawHtml() ?? '';
+    const html = finalizeReviewHtml(raw);
     if (!html.trim() || saving) return;
     setSaving(true);
     try {
-      const saved = await upsertReview(songId, html);
+      // Edytor = dokładnie payload API (żeby pierwszy zapis nie zostawiał <div> w bazie przy rozjechanym ref/DOM).
+      editorRef.current?.setContent(html);
+      const saved = await upsertReview(songId, html, songTitle);
       setReviewMeta({ id: saved.id, updated_at: saved.updated_at });
       setInitialHtml(saved.content_html);
       editorRef.current?.setContent(saved.content_html);

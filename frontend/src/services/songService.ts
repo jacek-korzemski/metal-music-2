@@ -40,6 +40,8 @@ export interface ReviewAuthor {
 export interface ReviewListItem {
   id: number;
   song_id: number;
+  /** Denormalizowany tytuł z user-backend (null u starych rekordów). */
+  song_title: string | null;
   updated_at: string;
   created_at: string;
   author: ReviewAuthor;
@@ -48,6 +50,7 @@ export interface ReviewListItem {
 export interface ReviewDetail {
   id: number;
   song_id: number;
+  song_title: string | null;
   content_html: string;
   created_at: string;
   updated_at: string;
@@ -128,11 +131,18 @@ export async function getReviewBySong(
 
 export async function upsertReview(
   songId: number,
-  contentHtml: string
+  contentHtml: string,
+  songTitle?: string | null
 ): Promise<ReviewDetail> {
+  const body: { content_html: string; song_title?: string } = {
+    content_html: contentHtml,
+  };
+  if (songTitle != null && String(songTitle).trim() !== '') {
+    body.song_title = String(songTitle).trim();
+  }
   const response = await fetchWithAuth(`/admin/songs/${songId}/review`, {
     method: 'PUT',
-    body: JSON.stringify({ content_html: contentHtml }),
+    body: JSON.stringify(body),
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({

@@ -9,67 +9,16 @@ import {
   type CSSProperties,
 } from 'react';
 import styled, { css } from 'styled-components';
-import DOMPurify from 'dompurify';
-import type { Config } from 'dompurify';
 import TurndownService from 'turndown';
+import {
+  finalizeReviewHtml,
+  sanitizeRichTextHtml,
+} from '../../utils/reviewHtml';
 
 const turndown = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
 });
-
-/** Zgodne z user-backend HtmlSanitizer + formatowanie z execCommand */
-const PURIFY: Config = {
-  ALLOWED_TAGS: [
-    'p',
-    'br',
-    'strong',
-    'b',
-    'em',
-    'i',
-    'u',
-    's',
-    'strike',
-    'ul',
-    'ol',
-    'li',
-    'h1',
-    'h2',
-    'h3',
-    'h4',
-    'h5',
-    'h6',
-    'a',
-    'blockquote',
-    'table',
-    'thead',
-    'tbody',
-    'tr',
-    'th',
-    'td',
-    'span',
-    'div',
-    'font',
-    'hr',
-  ],
-  ALLOWED_ATTR: [
-    'href',
-    'target',
-    'rel',
-    'colspan',
-    'rowspan',
-    'align',
-    'style',
-    'color',
-    'face',
-    'size',
-  ],
-  ALLOW_DATA_ATTR: false,
-};
-
-function sanitizeForPasteAndCopy(html: string): string {
-  return String(DOMPurify.sanitize(html, PURIFY));
-}
 
 export interface SimpleWYSIWYGProps {
   initialContent?: string;
@@ -87,6 +36,8 @@ export interface SimpleWYSIWYGProps {
 }
 
 export interface SimpleWYSIWYGRef {
+  /** Surowe `innerHTML` edytora (bez normalizacji <div>→<p>). */
+  getRawHtml: () => string;
   getHtml: () => string;
   getContent: () => string;
   setContent: (html: string) => void;
@@ -234,11 +185,6 @@ const Editable = styled.div<{ $readOnly: boolean }>`
   font-size: ${({ theme }) => theme.fontSize.md};
   outline: none;
   cursor: ${({ $readOnly }) => ($readOnly ? 'default' : 'text')};
-
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.colors.borderFocus};
-    outline-offset: 2px;
-  }
 
   &[data-placeholder]:empty::before {
     content: attr(data-placeholder);
@@ -415,9 +361,10 @@ const SimpleWYSIWYG = forwardRef<SimpleWYSIWYGRef, SimpleWYSIWYGProps>(
     const [tableCols, setTableCols] = useState(2);
 
     useLayoutEffect(() => {
-      contentRef.current = initialContent;
+      const safe = finalizeReviewHtml(initialContent);
+      contentRef.current = safe;
       if (editorRef.current) {
-        editorRef.current.innerHTML = initialContent;
+        editorRef.current.innerHTML = safe;
       }
     }, [initialContent]);
 
@@ -492,7 +439,7 @@ const SimpleWYSIWYG = forwardRef<SimpleWYSIWYGRef, SimpleWYSIWYGProps>(
 
     const handleExportHtmlFile = useCallback(() => {
       const raw = contentRef.current || editorRef.current?.innerHTML || '';
-      const clean = sanitizeForPasteAndCopy(raw);
+      const clean = finalizeReviewHtml(raw);
       const blob = new Blob(
         [
           '<!DOCTYPE html><html><head><meta charset="utf-8" /></head><body>',
@@ -511,7 +458,7 @@ const SimpleWYSIWYG = forwardRef<SimpleWYSIWYGRef, SimpleWYSIWYGProps>(
 
     const handleExportMarkdownFile = useCallback(() => {
       const raw = contentRef.current || editorRef.current?.innerHTML || '';
-      const md = turndown.turndown(raw);
+      const md = turndown.turndown(finalizeReviewHtml(raw));
       const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -524,17 +471,20 @@ const SimpleWYSIWYG = forwardRef<SimpleWYSIWYGRef, SimpleWYSIWYGProps>(
     useImperativeHandle(
       ref,
       () => ({
-        getHtml: () => editorRef.current?.innerHTML ?? '',
-        getContent: () => editorRef.current?.innerHTML ?? '',
+        getRawHtml: () => editorRef.current?.innerHTML ?? '',
+        getHtml: () => finalizeReviewHtml(editorRef.current?.innerHTML ?? ''),
+        getContent: () => finalizeReviewHtml(editorRef.current?.innerHTML ?? ''),
         setContent: (html: string) => {
-          contentRef.current = html;
+          const safe = finalizeReviewHtml(html);
+          contentRef.current = safe;
           if (editorRef.current) {
-            editorRef.current.innerHTML = html;
+            editorRef.current.innerHTML = safe;
           }
-          onChange?.(html);
+          onChange?.(safe);
         },
         getPlainText: () => editorRef.current?.innerText ?? '',
-        getMarkdown: () => turndown.turndown(editorRef.current?.innerHTML ?? ''),
+        getMarkdown: () =>
+          turndown.turndown(finalizeReviewHtml(editorRef.current?.innerHTML ?? '')),
         clear: () => {
           if (editorRef.current) {
             editorRef.current.innerHTML = '';
@@ -568,7 +518,7 @@ const SimpleWYSIWYG = forwardRef<SimpleWYSIWYGRef, SimpleWYSIWYGProps>(
       const fragment = range.cloneContents();
       const container = document.createElement('div');
       container.appendChild(fragment);
-      const html = sanitizeForPasteAndCopy(container.innerHTML);
+      const html = sanitizeRichTextHtml(container.innerHTML);
       const plain = selection.toString();
 
       event.preventDefault();
@@ -586,7 +536,7 @@ const SimpleWYSIWYG = forwardRef<SimpleWYSIWYGRef, SimpleWYSIWYGProps>(
         const text = event.clipboardData.getData('text/plain');
         event.preventDefault();
         if (html) {
-          execute('insertHTML', sanitizeForPasteAndCopy(html));
+          execute('insertHTML', sanitizeRichTextHtml(html));
         } else if (text) {
           execute('insertText', text);
         }

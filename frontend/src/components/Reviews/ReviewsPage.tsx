@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Spinner } from '@/components/Spinner/Spinner';
-import { API_URL } from '@/config';
 import { useAuth } from '@/context/AuthContext';
 import {
   listReviews,
@@ -45,7 +44,6 @@ import {
   ReviewPlaceholder,
   SongDetailColumn,
 } from './styles';
-import type { Video } from '@/components/Main/types';
 
 const decodeHtml = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -63,12 +61,16 @@ const formatDate = (dateString: string) => {
   });
 };
 
+const reviewSongLabel = (songId: number, songTitle: string | null | undefined) =>
+  songTitle != null && songTitle.trim() !== ''
+    ? decodeHtml(songTitle)
+    : `Utwór #${songId}`;
+
 const ReviewsPage: React.FC = () => {
   const { isAdmin } = useAuth();
   const [reviews, setReviews] = useState<ReviewListItem[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(false);
-  const [titles, setTitles] = useState<Record<number, string>>({});
   const [selectedSongId, setSelectedSongId] = useState<number | null>(null);
   const [reviewDetail, setReviewDetail] = useState<ReviewDetail | null>(null);
   const [reviewLoading, setReviewLoading] = useState(false);
@@ -90,34 +92,6 @@ const ReviewsPage: React.FC = () => {
   useEffect(() => {
     void loadList();
   }, [loadList]);
-
-  useEffect(() => {
-    if (!reviews.length) {
-      setTitles({});
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      const next: Record<number, string> = {};
-      await Promise.all(
-        reviews.map(async (r) => {
-          try {
-            const res = await fetch(`${API_URL}/getVideoById/${r.song_id}`);
-            if (!res.ok) throw new Error('fail');
-            const data = (await res.json()) as Video[];
-            const title = data?.[0]?.title ?? `Utwór #${r.song_id}`;
-            next[r.song_id] = decodeHtml(title);
-          } catch {
-            next[r.song_id] = `Utwór #${r.song_id}`;
-          }
-        })
-      );
-      if (!cancelled) setTitles(next);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [reviews]);
 
   useEffect(() => {
     if (selectedSongId === null) {
@@ -155,6 +129,7 @@ const ReviewsPage: React.FC = () => {
         next[idx] = {
           ...next[idx],
           id: detail.id,
+          song_title: detail.song_title ?? next[idx].song_title,
           updated_at: detail.updated_at,
           created_at: detail.created_at,
         };
@@ -165,6 +140,7 @@ const ReviewsPage: React.FC = () => {
         {
           id: detail.id,
           song_id: detail.song_id,
+          song_title: detail.song_title,
           updated_at: detail.updated_at,
           created_at: detail.created_at,
           author: detail.author,
@@ -206,6 +182,13 @@ const ReviewsPage: React.FC = () => {
   }
 
   if (selectedSongId !== null) {
+    const expandedTitle =
+      selectedReview != null
+        ? reviewSongLabel(selectedSongId, selectedReview.song_title)
+        : reviewDetail != null
+          ? reviewSongLabel(selectedSongId, reviewDetail.song_title)
+          : `Recenzja — utwór #${selectedSongId}`;
+
     return (
       <FullHeightColumn>
         <ReviewsExpandedRoot>
@@ -223,10 +206,7 @@ const ReviewsPage: React.FC = () => {
                 <Spinner />
               ) : reviewDetail ? (
                 <>
-                  <ReviewArticleTitle>
-                    {titles[selectedSongId] ??
-                      `Recenzja — utwór #${selectedSongId}`}
-                  </ReviewArticleTitle>
+                  <ReviewArticleTitle>{expandedTitle}</ReviewArticleTitle>
                   <ReviewArticleMeta>
                     {selectedReview && (
                       <>
@@ -285,7 +265,7 @@ const ReviewsPage: React.FC = () => {
                     <ItemRow>
                       <ItemLabel>Utwór</ItemLabel>
                       <ItemValue>
-                        {titles[r.song_id] ?? `Utwór #${r.song_id}`}
+                        {reviewSongLabel(r.song_id, r.song_title)}
                       </ItemValue>
                     </ItemRow>
                     <ItemRow>

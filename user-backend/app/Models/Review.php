@@ -10,6 +10,7 @@ class Review extends Model
     protected $fillable = [
         'user_id',
         'song_id',
+        'song_title',
         'content_html',
     ];
 

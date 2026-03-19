@@ -162,7 +162,11 @@ const SongDetail: React.FC<SongDetailProps> = ({
               onCommentAdded={fetchComments}
             />
           ) : (
-            <ReviewSection songId={songId} onReviewSaved={onReviewSaved} />
+            <ReviewSection
+              songId={songId}
+              songTitle={decodeHtml(video.title)}
+              onReviewSaved={onReviewSaved}
+            />
           )}
         </>
       ) : (

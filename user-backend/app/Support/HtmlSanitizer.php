@@ -5,6 +5,7 @@ namespace App\Support;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
+use DOMXPath;
 
 /**
  * Server-side HTML cleanup for rich text (WYSIWYG).
@@ -57,6 +58,7 @@ final class HtmlSanitizer
         }
 
         self::sanitizeTree($root);
+        self::normalizeReviewParagraphs($dom, $root);
 
         $out = '';
         foreach ($root->childNodes as $child) {
@@ -114,5 +116,136 @@ final class HtmlSanitizer
         foreach ($remove as $name) {
             $el->removeAttribute($name);
         }
+    }
+
+    /**
+     * Ujednolica akapity jak frontend normalizeReviewHtml: goły tekst → <p>, <div> bez dzieci-bloków → <p>, inaczej unwrap.
+     */
+    private static function normalizeReviewParagraphs(DOMDocument $dom, DOMElement $root): void
+    {
+        for ($i = 0; $i < 12; $i++) {
+            $before = $dom->saveHTML($root);
+            self::wrapLooseTextNodesInSubtree($root);
+            self::normalizeDivElementsPass($dom, $root);
+            $after = $dom->saveHTML($root);
+            if ($before === $after) {
+                break;
+            }
+        }
+    }
+
+    private static function wrapLooseTextNodesInSubtree(DOMNode $container): void
+    {
+        if (! $container->hasChildNodes()) {
+            return;
+        }
+
+        $children = [];
+        foreach ($container->childNodes as $child) {
+            $children[] = $child;
+        }
+        foreach ($children as $child) {
+            if ($child instanceof DOMElement) {
+                self::wrapLooseTextNodesInSubtree($child);
+            }
+        }
+
+        $children = [];
+        foreach ($container->childNodes as $child) {
+            $children[] = $child;
+        }
+        if (! $container instanceof DOMElement || ! self::shouldWrapLooseTextInElement($container)) {
+            return;
+        }
+
+        foreach ($children as $child) {
+            if ($child->nodeType !== XML_TEXT_NODE) {
+                continue;
+            }
+            $text = (string) $child->textContent;
+            if (trim($text) === '') {
+                if ($text === '') {
+                    $container->removeChild($child);
+                }
+
+                continue;
+            }
+            $doc = $container->ownerDocument;
+            if (! $doc instanceof DOMDocument) {
+                continue;
+            }
+            $p = $doc->createElement('p');
+            $container->insertBefore($p, $child);
+            $p->appendChild($child);
+        }
+    }
+
+    /** @see frontend normalizeReviewHtml — nie owijać tekstu już w <p> / nagłówkach (unikaj <p><p>). */
+    private static function shouldWrapLooseTextInElement(DOMElement $el): bool
+    {
+        $tag = strtolower($el->tagName);
+
+        return in_array($tag, ['div', 'blockquote', 'td', 'th', 'li', 'ul', 'ol'], true);
+    }
+
+    private static function normalizeDivElementsPass(DOMDocument $dom, DOMElement $context): bool
+    {
+        $xpath = new DOMXPath($dom);
+        $divs = [];
+        foreach ($xpath->query('descendant::div', $context) as $n) {
+            if ($n instanceof DOMElement) {
+                $divs[] = $n;
+            }
+        }
+        $divs = array_reverse($divs);
+        $changed = false;
+
+        foreach ($divs as $div) {
+            if (! $div->parentNode) {
+                continue;
+            }
+
+            $hasBlockChild = false;
+            foreach ($div->childNodes as $ch) {
+                if ($ch instanceof DOMElement && self::isBlockLikeElement($ch)) {
+                    $hasBlockChild = true;
+                    break;
+                }
+            }
+
+            if (! $hasBlockChild) {
+                $p = $dom->createElement('p');
+                while ($div->firstChild) {
+                    $p->appendChild($div->firstChild);
+                }
+                foreach (['align', 'style'] as $attr) {
+                    if ($div->hasAttribute($attr)) {
+                        $p->setAttribute($attr, $div->getAttribute($attr));
+                    }
+                }
+                $div->parentNode->replaceChild($p, $div);
+                $changed = true;
+            } else {
+                $parent = $div->parentNode;
+                while ($div->firstChild) {
+                    $parent->insertBefore($div->firstChild, $div);
+                }
+                $parent->removeChild($div);
+                $changed = true;
+            }
+        }
+
+        return $changed;
+    }
+
+    private static function isBlockLikeElement(DOMElement $el): bool
+    {
+        $tag = strtolower($el->tagName);
+
+        return in_array($tag, [
+            'div', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+            'blockquote', 'hr',
+        ], true);
     }
 }
