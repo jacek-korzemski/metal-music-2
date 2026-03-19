@@ -19,19 +19,9 @@ const ActionsRow = styled.div`
 `;
 
 const EditorWrap = styled.div`
-  min-height: 220px;
+  width: 100%;
   max-width: 960px;
 `;
-
-function downloadBlob(filename: string, content: string, mime: string) {
-  const blob = new Blob([content], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 interface ReviewSectionProps {
   songId: number;
@@ -93,13 +83,11 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
   };
 
   const handleExportHtml = () => {
-    const html = editorRef.current?.getHtml() ?? '';
-    downloadBlob(`recenzja-${songId}.html`, html, 'text/html;charset=utf-8');
+    editorRef.current?.exportHtmlFile();
   };
 
   const handleExportMd = () => {
-    const md = editorRef.current?.getMarkdown() ?? '';
-    downloadBlob(`recenzja-${songId}.md`, md, 'text/markdown;charset=utf-8');
+    editorRef.current?.exportMarkdownFile();
   };
 
   if (loading) {
@@ -123,7 +111,9 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
         <SimpleWYSIWYG
           key={`${songId}-${reviewMeta?.id ?? 'new'}`}
           ref={editorRef}
-          height="280px"
+          editorMaxHeight="min(62vh, 640px)"
+          editorMinHeight="240px"
+          exportBasename={`recenzja-${songId}`}
           placeholder="Napisz recenzję…"
           initialContent={initialHtml}
         />
