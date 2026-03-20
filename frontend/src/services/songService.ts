@@ -42,6 +42,8 @@ export interface ReviewListItem {
   song_id: number;
   /** Denormalizowany tytuł z user-backend (null u starych rekordów). */
   song_title: string | null;
+  /** Gdy true, recenzja nie trafia do eksportu WordPress. */
+  skip_export: boolean;
   updated_at: string;
   created_at: string;
   author: ReviewAuthor;
@@ -51,6 +53,7 @@ export interface ReviewDetail {
   id: number;
   song_id: number;
   song_title: string | null;
+  skip_export: boolean;
   content_html: string;
   created_at: string;
   updated_at: string;
@@ -164,6 +167,23 @@ export async function deleteReview(reviewId: number): Promise<{ message: string 
     throw errorData;
   }
   return response.json() as Promise<{ message: string }>;
+}
+
+export async function updateReviewSkipExport(
+  reviewId: number,
+  skipExport: boolean
+): Promise<ReviewListItem> {
+  const response = await fetchWithAuth(`/admin/reviews/${reviewId}/skip-export`, {
+    method: 'PATCH',
+    body: JSON.stringify({ skip_export: skipExport }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: `Request failed with status ${response.status}`,
+    }));
+    throw errorData;
+  }
+  return response.json() as Promise<ReviewListItem>;
 }
 
 export async function getComments(songId: number): Promise<CommentData[]> {

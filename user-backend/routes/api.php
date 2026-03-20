@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ExportReviewController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SongInteractionController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,10 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
     });
+});
+
+Route::middleware('wordpress.export')->group(function () {
+    Route::get('/exports/reviews', [ExportReviewController::class, 'index']);
 });
 
 Route::get('/reviews', [ReviewController::class, 'index']);
@@ -35,5 +40,6 @@ Route::middleware(['auth:api', 'admin'])->prefix('admin')->group(function () {
     Route::get('/ratings', [AdminController::class, 'getAllRatings']);
     Route::delete('/ratings/{id}', [AdminController::class, 'deleteRating']);
     Route::put('/songs/{songId}/review', [ReviewController::class, 'upsert']);
+    Route::patch('/reviews/{id}/skip-export', [ReviewController::class, 'updateSkipExport']);
     Route::delete('/reviews/{id}', [ReviewController::class, 'destroy']);
 });

@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'wordpress_export' => [
+        'api_key' => env('WORDPRESS_EXPORT_API_KEY'),
+    ],
+
 ];

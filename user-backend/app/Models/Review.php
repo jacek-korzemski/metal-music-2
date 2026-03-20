@@ -12,7 +12,18 @@ class Review extends Model
         'song_id',
         'song_title',
         'content_html',
+        'skip_export',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'skip_export' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {

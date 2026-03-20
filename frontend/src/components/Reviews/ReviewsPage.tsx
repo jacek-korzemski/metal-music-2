@@ -6,6 +6,7 @@ import {
   listReviews,
   getReviewBySong,
   deleteReview,
+  updateReviewSkipExport,
   type ReviewListItem,
   type ReviewDetail,
 } from '@/services/songService';
@@ -80,7 +81,9 @@ const ReviewsPage: React.FC = () => {
     setListError(false);
     try {
       const data = await listReviews();
-      setReviews(data);
+      setReviews(
+        data.map((r) => ({ ...r, skip_export: r.skip_export ?? false }))
+      );
     } catch {
       setListError(true);
       setReviews([]);
@@ -130,6 +133,7 @@ const ReviewsPage: React.FC = () => {
           ...next[idx],
           id: detail.id,
           song_title: detail.song_title ?? next[idx].song_title,
+          skip_export: detail.skip_export ?? next[idx].skip_export,
           updated_at: detail.updated_at,
           created_at: detail.created_at,
         };
@@ -141,6 +145,7 @@ const ReviewsPage: React.FC = () => {
           id: detail.id,
           song_id: detail.song_id,
           song_title: detail.song_title,
+          skip_export: detail.skip_export ?? false,
           updated_at: detail.updated_at,
           created_at: detail.created_at,
           author: detail.author,
@@ -148,6 +153,25 @@ const ReviewsPage: React.FC = () => {
       ];
     });
   }, []);
+
+  const handleSkipExportChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    review: ReviewListItem
+  ) => {
+    e.stopPropagation();
+    const next = e.target.checked;
+    const prev = review.skip_export ?? false;
+    setReviews((list) =>
+      list.map((x) => (x.id === review.id ? { ...x, skip_export: next } : x))
+    );
+    try {
+      await updateReviewSkipExport(review.id, next);
+    } catch {
+      setReviews((list) =>
+        list.map((x) => (x.id === review.id ? { ...x, skip_export: prev } : x))
+      );
+    }
+  };
 
   const handleDelete = async (e: React.MouseEvent, reviewId: number, songId: number) => {
     e.stopPropagation();
@@ -275,6 +299,26 @@ const ReviewsPage: React.FC = () => {
                   </ItemInfo>
                   {isAdmin && (
                     <ItemActions>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          cursor: 'pointer',
+                          marginRight: '0.5rem',
+                          fontSize: '0.875rem',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={r.skip_export ?? false}
+                          onChange={(e) => void handleSkipExportChange(e, r)}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Pomiń export do WordPress"
+                        />
+                        Pomiń export
+                      </label>
                       <ActionButton
                         type="button"
                         $variant="danger"

@@ -93,6 +93,32 @@ class ReviewController extends Controller
         return response()->json(['message' => 'Review deleted']);
     }
 
+    public function updateSkipExport(Request $request, int $id): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'skip_export' => 'required|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $review = Review::find($id);
+
+        if (! $review) {
+            return response()->json(['message' => 'Review not found'], 404);
+        }
+
+        $review->skip_export = $request->boolean('skip_export');
+        $review->save();
+        $review->load('user:id,name');
+
+        return response()->json($this->toReviewArray($review, withContent: false));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -102,6 +128,7 @@ class ReviewController extends Controller
             'id' => $review->id,
             'song_id' => $review->song_id,
             'song_title' => $review->song_title,
+            'skip_export' => (bool) $review->skip_export,
             'created_at' => $review->created_at,
             'updated_at' => $review->updated_at,
             'author' => [
