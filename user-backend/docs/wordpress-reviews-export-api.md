@@ -2,6 +2,8 @@
 
 Ten dokument opisuje chroniony endpoint HTTP zwracający ostatnie recenzje z backendu aplikacji (model `Review`). Można go wykorzystać do zaimplementowania importu po stronie WordPressa (np. w motywie, `functions.php`, wtyczce lub zadaniu cron).
 
+**Dla implementacji w osobnym repozytorium WordPressa:** ten plik jest **jedynym źródłem kontraktu** HTTP (ścieżka, nagłówki, pola JSON, zachowanie przy `null`). Nie trzeba czytać kodu Laravel, aby poprawnie zaimportować treść i grafikę wyróżniającą.
+
 **Ważne:** Dostęp wymaga sekretu skonfigurowanego tylko na serwerze produkcyjnym (`WORDPRESS_EXPORT_API_KEY` w `.env`). Bez poprawnego klucza endpoint zwraca `401` lub `503`; nie udostępniaj klucza w repozytorium ani w kodzie frontu.
 
 ## Środowiska (referencja)
@@ -52,6 +54,14 @@ Ciało: **tablica JSON** obiektów. Każdy element:
 | `title` | string \| null | Tytuł powiązany z utworem (`song_title` w DB); może być `null`. |
 | `content` | string | Treść recenzji jako **HTML** (pole `content_html` w DB). Importuj do `post_content` lub najpierw oczyść/filtruj po swojej stronie. |
 | `updated_at` | string (ISO 8601) | Ostatnia modyfikacja; przydatne do synchronizacji przyrostowej i wykrywania zmian. |
+| `video_id` | string \| null | Identyfikator filmu YouTube zapisany przy recenzji (do meta / debugowania). **Nie buduj** po stronie WordPressa własnych URL-i miniatur z tego pola — użyj wyłącznie `featured_image_url`. |
+| `featured_image_url` | string \| null | **Jeden** gotowy URL HTTPS do miniatury (obraz JPEG na CDN YouTube). Backend wybiera najlepszy dostępny wariant (`maxresdefault` → `sddefault` → `hqdefault`) przez sprawdzenie po swojej stronie. Jeśli brak zapisanego `video_id` w recenzji albo żaden wariant nie jest dostępny — `null`. |
+
+### Import grafiki wyróżniającej (featured image)
+
+1. **Nie wywołuj** YouTube Data API ani nie składaj samodzielnie adresów `img.youtube.com/vi/.../maxresdefault.jpg` itd. — logika wyboru wariantu jest **wyłącznie w backendzie** aplikacji.
+2. Gdy `featured_image_url` jest **niepustym stringiem**, pobierz obrazek **jednym** żądaniem HTTP GET do tego URL (np. w PHP: `download_url()` z WordPressa, potem `media_handle_sideload()` / `set_post_thumbnail()` albo odpowiednik w Twojej wtyczce).
+3. Gdy `featured_image_url` jest **`null`**, pomiń ustawianie miniatury wpisu albo użyj domyślnego obrazka motywu — decyzja po stronie WordPressa; API tylko informuje, że nie ma grafiki do importu.
 
 ### Przykład (fragment)
 
@@ -61,7 +71,9 @@ Ciało: **tablica JSON** obiektów. Każdy element:
     "id": 12,
     "title": "Band Name — Track Title",
     "content": "<p>Recenzja w HTML…</p>",
-    "updated_at": "2026-03-20T14:30:00.000000Z"
+    "updated_at": "2026-03-20T14:30:00.000000Z",
+    "video_id": "dQw4w9WgXcQ",
+    "featured_image_url": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
   }
 ]
 ```

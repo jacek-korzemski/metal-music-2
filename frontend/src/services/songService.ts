@@ -42,6 +42,8 @@ export interface ReviewListItem {
   song_id: number;
   /** Denormalizowany tytuł z user-backend (null u starych rekordów). */
   song_title: string | null;
+  /** YouTube video id (zapis przy tworzeniu recenzji; null u starych rekordów). */
+  video_id: string | null;
   /** Gdy true, recenzja nie trafia do eksportu WordPress. */
   skip_export: boolean;
   updated_at: string;
@@ -53,6 +55,7 @@ export interface ReviewDetail {
   id: number;
   song_id: number;
   song_title: string | null;
+  video_id: string | null;
   skip_export: boolean;
   content_html: string;
   created_at: string;
@@ -135,13 +138,20 @@ export async function getReviewBySong(
 export async function upsertReview(
   songId: number,
   contentHtml: string,
-  songTitle?: string | null
+  songTitle?: string | null,
+  videoId?: string | null
 ): Promise<ReviewDetail> {
-  const body: { content_html: string; song_title?: string } = {
+  const body: { content_html: string; song_title?: string; video_id?: string | null } = {
     content_html: contentHtml,
   };
   if (songTitle != null && String(songTitle).trim() !== '') {
     body.song_title = String(songTitle).trim();
+  }
+  if (videoId !== undefined) {
+    body.video_id =
+      videoId != null && String(videoId).trim() !== ''
+        ? String(videoId).trim()
+        : null;
   }
   const response = await fetchWithAuth(`/admin/songs/${songId}/review`, {
     method: 'PUT',

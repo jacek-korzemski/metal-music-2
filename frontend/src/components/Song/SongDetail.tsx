@@ -165,6 +165,7 @@ const SongDetail: React.FC<SongDetailProps> = ({
             <ReviewSection
               songId={songId}
               songTitle={decodeHtml(video.title)}
+              videoId={video.video_id}
               onReviewSaved={onReviewSaved}
             />
           )}

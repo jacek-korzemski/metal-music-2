@@ -11,6 +11,7 @@ class Review extends Model
         'user_id',
         'song_id',
         'song_title',
+        'video_id',
         'content_html',
         'skip_export',
     ];

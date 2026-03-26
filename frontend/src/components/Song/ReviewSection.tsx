@@ -28,6 +28,8 @@ interface ReviewSectionProps {
   songId: number;
   /** Zapis do user-backend (lista /reviews bez skoku tytułu). */
   songTitle?: string | null;
+  /** YouTube video id — wysyłane przy zapisie (eksport WordPress / miniatury). */
+  videoId?: string;
   /** Wywoływane po udanym zapisie (np. odświeżenie podglądu recenzji obok edytora) */
   onReviewSaved?: (detail: ReviewDetail) => void;
 }
@@ -35,6 +37,7 @@ interface ReviewSectionProps {
 const ReviewSection: React.FC<ReviewSectionProps> = ({
   songId,
   songTitle,
+  videoId,
   onReviewSaved,
 }) => {
   const editorRef = useRef<SimpleWYSIWYGRef>(null);
@@ -77,7 +80,12 @@ const ReviewSection: React.FC<ReviewSectionProps> = ({
     try {
       // Edytor = dokładnie payload API (żeby pierwszy zapis nie zostawiał <div> w bazie przy rozjechanym ref/DOM).
       editorRef.current?.setContent(html);
-      const saved = await upsertReview(songId, html, songTitle);
+      const saved = await upsertReview(
+        songId,
+        html,
+        songTitle,
+        videoId
+      );
       setReviewMeta({ id: saved.id, updated_at: saved.updated_at });
       setInitialHtml(saved.content_html);
       editorRef.current?.setContent(saved.content_html);

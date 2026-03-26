@@ -40,6 +40,7 @@ class ReviewController extends Controller
         $validator = Validator::make($request->all(), [
             'content_html' => 'required|string|max:500000',
             'song_title' => 'nullable|string|max:512',
+            'video_id' => 'sometimes|nullable|string|max:32|regex:/^[a-zA-Z0-9_-]*$/',
         ]);
 
         if ($validator->fails()) {
@@ -68,6 +69,15 @@ class ReviewController extends Controller
         ];
         if ($songTitle !== null) {
             $attributes['song_title'] = $songTitle;
+        }
+        if ($request->has('video_id')) {
+            $raw = $request->input('video_id');
+            if (is_string($raw)) {
+                $trim = trim($raw);
+                $attributes['video_id'] = $trim === '' ? null : $trim;
+            } else {
+                $attributes['video_id'] = null;
+            }
         }
 
         $review = Review::updateOrCreate(
@@ -128,6 +138,7 @@ class ReviewController extends Controller
             'id' => $review->id,
             'song_id' => $review->song_id,
             'song_title' => $review->song_title,
+            'video_id' => $review->video_id,
             'skip_export' => (bool) $review->skip_export,
             'created_at' => $review->created_at,
             'updated_at' => $review->updated_at,
