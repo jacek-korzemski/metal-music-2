@@ -20,7 +20,9 @@ class ExportReviewController extends Controller
             ->limit(50)
             ->get();
 
-        $payload = $reviews->map(function (Review $review) {
+        $categorySlug = (string) config('services.wordpress_export.category_slug', 'recenzje');
+
+        $payload = $reviews->map(function (Review $review) use ($categorySlug) {
             $featuredImageUrl = $this->youTubeThumbnailResolver->resolve($review->video_id);
 
             return [
@@ -30,6 +32,7 @@ class ExportReviewController extends Controller
                 'updated_at' => $review->updated_at,
                 'video_id' => $review->video_id,
                 'featured_image_url' => $featuredImageUrl,
+                'category_slug' => $categorySlug,
             ];
         });
 

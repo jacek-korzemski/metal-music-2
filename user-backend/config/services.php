@@ -37,6 +37,8 @@ return [
 
     'wordpress_export' => [
         'api_key' => env('WORDPRESS_EXPORT_API_KEY'),
+        /** Slug kategorii wpisu w WordPressie dla importowanych recenzji (domyślnie `recenzje`). */
+        'category_slug' => env('WORDPRESS_EXPORT_CATEGORY_SLUG', 'recenzje'),
     ],
 
 ];
