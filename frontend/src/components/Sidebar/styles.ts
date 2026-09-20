@@ -138,6 +138,8 @@ export const LayoutContainer = styled.div`
 export const MainContent = styled.main`
   padding: 4px;
   flex: 1;
+  min-height: 0;
+  min-width: 0;
   overflow: auto;
   background-color: ${({ theme }) => theme.colors.background};
 `;

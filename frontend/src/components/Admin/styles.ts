@@ -55,6 +55,7 @@ export const ItemList = styled.div`
 export const ItemCard = styled.div`
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   background: ${({ theme }) => theme.colors.surface};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: ${({ theme }) => theme.borderRadius.md};
