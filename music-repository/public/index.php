@@ -1,20 +1,24 @@
 <?php
 
+// Laravel 8 is not PHP 8.4-clean; hide vendor deprecations so API responses stay JSON.
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    header("Access-Control-Allow-Origin: *");
-    header('Access-Control-Allow-Credentials: true');
+// Preflight is answered here so Apache/PHP never drops OPTIONS before Laravel CORS.
+// Do not send Allow-Credentials: true together with Allow-Origin: * — browsers reject that.
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    header('Access-Control-Allow-Origin: *');
     header('Access-Control-Max-Age: 86400');
-}
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'])) {
-        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");         
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
     }
     if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
         header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
     }
+    http_response_code(204);
+    exit(0);
 }
 
 define('LARAVEL_START', microtime(true));
